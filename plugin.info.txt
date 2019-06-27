@@ -1,0 +1,7 @@
+base   analyze
+author Andreas Gohr
+email  andi@splitbrain.org
+date   2019-06-27
+name   analyze plugin
+desc   Analyze a DokuWiki
+url    https://www.dokuwiki.org/plugin:analyze
