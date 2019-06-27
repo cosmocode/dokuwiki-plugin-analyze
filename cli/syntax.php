@@ -39,19 +39,21 @@ class cli_plugin_analyze_syntax extends DokuWiki_CLI_Plugin
      */
     protected function main(Options $options)
     {
+        $num = $options->getOpt('pages', 0);
+        $tf = new TableFormatter($this->colors);
         $result = $this->searchSyntaxUsage();
 
         foreach ($result as $name => $pages) {
-            $tf = new TableFormatter($this->colors);
-
+            $count = count($pages);
+            $color = Colors::C_YELLOW;
+            if ($count === 0) $color = Colors::C_RED;
 
             echo $tf->format(
                 [20, '*'],
-                [$name, count($pages)],
-                [Colors::C_GREEN, Colors::C_YELLOW]
+                [$name, $count],
+                [Colors::C_GREEN, $color]
             );
 
-            $num = $options->getOpt('pages', 0);
             if ($num) {
                 if ($num > 0) {
                     $pages = array_slice($pages, 0, $num);
@@ -66,6 +68,31 @@ class cli_plugin_analyze_syntax extends DokuWiki_CLI_Plugin
         }
     }
 
+    /**
+     * Get all installed plugins that contain syntax components
+     *
+     * Returns disabled plugins as well
+     *
+     * @return array
+     */
+    protected function getSyntaxPlugins()
+    {
+        $list = array_merge(
+            glob(DOKU_PLUGIN . '*/syntax/'),
+            glob(DOKU_PLUGIN . '*/syntax.php')
+        );
+
+        $plugins = [];
+
+        foreach ($list as $item) {
+            $item = preg_replace('/syntax(\.php|\/)?$/', '', $item);
+            $plugins[] = basename($item);
+        }
+        array_unique($plugins);
+
+        return $plugins;
+    }
+
 
     /**
      * Search which pages use which syntax
@@ -77,7 +104,7 @@ class cli_plugin_analyze_syntax extends DokuWiki_CLI_Plugin
         $idx = idx_get_indexer();
         $pages = $idx->getPages();
 
-        $result = [];
+        $result = array_fill_keys($this->getSyntaxPlugins(), []);
         foreach ($pages as $id) {
             if (!page_exists($id)) continue;
             $this->info("Scanning $id...");
